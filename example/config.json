@@ -1,0 +1,6 @@
+{
+  "contracts": [
+    "example/contract/person-contract.raml",
+    "example/contract/auth-contract.raml"
+  ]
+}

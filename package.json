@@ -1,0 +1,26 @@
+{
+  "name": "hock-n-raml",
+  "description": "HTTP mock server compliant with raml-contracts.",
+  "version": "0.1.0",
+  "main": "src/hock-n-raml.js",
+  "author": "Otávio Leitão <leitao.otavio@gmail.com> (https://github.com/otavioleitao)",
+  "keywords": ["http", "server", "mock", "raml", "hock", "nock"],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:otavioleitao/hock-n-raml.git"
+  },
+  "bugs": {
+    "url": "https://github.com/otavioleitao/hock-n-raml/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/brentertz/scapegoat/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "hock": "1.2.0",
+    "raml-parser": "0.8.10",
+    "q": "1.2.0"
+  }
+}
