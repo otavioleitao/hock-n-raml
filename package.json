@@ -21,6 +21,7 @@
   "dependencies": {
     "hock": "1.2.0",
     "raml-parser": "0.8.10",
-    "q": "1.2.0"
+    "q": "1.2.0",
+    "http-proxy": "1.8.1"
   }
 }

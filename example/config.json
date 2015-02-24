@@ -1,4 +1,10 @@
 {
+  "server": {
+    "port": 8080
+  },
+  "proxy": {
+    "target": "http://localhost:80/"
+  },
   "contracts": [
     "example/contract/person-contract.raml",
     "example/contract/auth-contract.raml"
