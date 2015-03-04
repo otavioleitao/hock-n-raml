@@ -10,6 +10,27 @@ baseUri: http://{domain}/bagagem
     get:
       responses:
         200:
+      queryParameters:
+        search:
+          displayName: Search field
+          type: string
+          required: true
+        order:
+          displayName: Order field
+          type: number
+          required: false
+        quantity:
+          displayName: Quantity field
+          type: integer
+          required: false
+        start:
+          displayName: Start date
+          type: date
+          required: false
+        lazy:
+          displayName: Lazy flag
+          type: boolean
+          required: false
     /c:
       get:
         responses:

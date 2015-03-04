@@ -110,11 +110,8 @@ function RAMLServer(config) {
     };
 
     this.validate = function(request, response, body) {
-        try {
-            this.isRequestValid(request);
-        }
-        catch (err) {
-            console.log('-> invalid request\n\tURL =', request.url, '\n\t' + err);
+        if (!this.isRequestValid(request)) {
+            console.log('-> invalid request\n\tURL =', request.url);
             console.log('\n*** shutting down server due to errors *** \n');
             process.exit();
         }
@@ -127,25 +124,21 @@ function RAMLServer(config) {
 
     this.isRequestValid = function(request) {
         var valid = false;
-
         this.contracts.forEach(function(contract) {
             if (contract.isRequestValid(request)) {
                 valid = true;
             }
         });
-
         return valid;
     };
 
     this.isResponseValid = function(response, body) {
         var valid = false;
-
         this.contracts.forEach(function(contract) {
             if (contract.isResponseValid(response, body)) {
                 valid = true;
             }
         });
-
         return valid;
     };
 }
@@ -155,10 +148,7 @@ function Contract(data) {
     this.isRequestValid = function(request) {
         var definition = this.getDefinition(request.url);
         if (definition) {
-            console.log(definition);
-        }
-        else {
-            throw "URL not defined in any RAML contract.";
+            return definition.matches(request);
         }
     };
 
@@ -194,7 +184,7 @@ function Resource(data) {
         }
         else {
             var relativeUri = getUriPart(uri, 1);
-            if (relativeUri == data.relativeUri) {
+            if (uriEquals(data.relativeUri, relativeUri)) {
                 relativeUri = uri.slice(relativeUri.length);
                 var currentUri = getUriPart(uri, 2);
                 if (currentUri != '/') {
@@ -209,11 +199,17 @@ function Resource(data) {
             }
         }
     };
+
     this.getResourceByRelativeUri = function(uri) {
         if (data.resources) {
             return findResourcebyRelativeUri(data.resources, uri);
         }
     };
+
+    this.matches = function(request) {
+        // var matchHeaders = this.matchHeaders(request.headers);
+        return true;
+    }
 }
 
 function uriMatch(uriContract, uriChecked) {
