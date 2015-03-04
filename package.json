@@ -19,9 +19,11 @@
     }
   ],
   "dependencies": {
-    "hock": "1.2.0",
-    "raml-parser": "0.8.10",
     "q": "1.2.0",
-    "http-proxy": "1.8.1"
+    "raml-parser": "0.8.10",
+    "express": "4.12.0",
+    "express-http-proxy": "0.3.1",
+    "hock": "1.2.0",
+    "array.prototype.find": "1.0.0"
   }
 }

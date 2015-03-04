@@ -1,31 +1,28 @@
 #%RAML 0.8
- 
-title: World Music API
-baseUri: http://example.api.com/{version}
-version: v1
-/songs:
+
+title: Bagagem RAML Contract
+baseUri: http://{domain}/bagagem
+/a:
   get:
-    queryParameters:
-      genre:
-        description: filter the songs by genre
-  post:
-  /{songId}:
+    responses:
+      200:
+  /b:
     get:
       responses:
         200:
-          body:
-            application/json:
-              schema: |
-                { "$schema": "http://json-schema.org/schema",
-                  "type": "object",
-                  "description": "A canonical song",
-                  "properties": {
-                    "title":  { "type": "string" },
-                    "artist": { "type": "string" }
-                  },
-                  "required": [ "title", "artist" ]
-                }
-            application/xml:
-    delete:
-      description: |
-        This method will *delete* an **individual song**
+    /c:
+      get:
+        responses:
+          200:
+      /d:
+        get:
+          responses:
+            200:
+        /e:
+          get:
+            responses:
+              200:
+          /{id}:
+            get:
+              responses:
+                200:
