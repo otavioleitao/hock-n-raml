@@ -3,27 +3,24 @@
 title: Bagagem RAML Contract
 baseUri: http://{domain}:8081/bagagem
 /login:
-  get:
-    queryParameters:
-      otavio:
-        type: string
-        required: true
-      teste:
-        type: string
-        required: true
+  post:
     headers:
       authorization:
         type: string
         required: true
     body:
       application/json:
-        schema:
-          username:
-            type: string
-            required: true
-          password:
-            type: string
-            required: true
+        schema: |
+          {
+              "username": {
+                "type": "string",
+                "required": true
+              },
+              "password": {
+                "type": "string",
+                "required": true
+              }
+          }
         example: |
           {
             "username": "otavio",
@@ -31,22 +28,21 @@ baseUri: http://{domain}:8081/bagagem
           }
     responses:
       200:
-        headers:
-          authorization:
-            type: string
-            required: true
-        body:
-          application/json:
-            schema:
-              username:
-                type: string
-                required: true
-              password:
-                type: string
-                required: true
-            example: |
-              {
-                "username": "otavio",
-                "password": "123456"
+      application/json:
+        schema: |
+          {
+              "username": {
+                "type": "string",
+                "required": true
+              },
+              "password": {
+                "type": "string",
+                "required": true
               }
+          }
+        example: |
+          {
+            "username": "otavio",
+            "password": "123456"
+          }
       401:

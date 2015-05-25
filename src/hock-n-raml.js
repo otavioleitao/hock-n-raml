@@ -112,6 +112,9 @@ function Contract(data) {
         if (definition) {
             return definition.matchesRequest(request) && definition.matchesResponse(request, response);
         }
+        else {
+            console.log("no definition for " + request.url);
+        }
     };
 
     this.getDefinition = function(url) {
@@ -171,39 +174,72 @@ function Resource(data) {
         if (requestDefinition) {
             return this.matchRequestParams(requestDefinition, request) && this.matchRequestHeaders(requestDefinition, request);
         }
+        else {
+            console.log("no definition for " + request.method.toLowerCase() + " HTTP method");
+        }
     };
 
     this.matchRequestParams = function(definition, request) {
-        return request.method.toLowerCase() === 'get' ? this.matchQueryParams(definition, request) : this.matchRequestBody(definition, request);
+        return this.matchQueryParams(definition, request) && this.matchRequestBody(definition, request);
     };
 
     this.matchRequestBody = function(definition, request) {
-        return definition.body['application/json'] && matchObject(definition.body['application/json'].schema, request.body);
+        if (definition.body['application/json'] && matchObject(definition.body['application/json'].schema, request.body)) {
+            return true;
+        }
+        else {
+            console.log("request body doesn't match");
+        }
     };
 
     this.matchQueryParams = function(definition, request) {
-        return matchObject(definition.queryParameters, request.query);
+        if (matchObject(definition.queryParameters, request.query)) {
+            return true;
+        }
+        else {
+            console.log("request query params don't match");
+        }
     };
 
     this.matchRequestHeaders = function(definition, request) {
-        return matchObject(definition.headers, request.headers);
+        if (matchObject(definition.headers, request.headers)) {
+            return true;
+        }
+        else {
+            console.log("request headers don't match");
+        }
     };
 
     this.matchesResponse = function(request, response) {
         var definition = data.methods.filter(function(def) {
             return def.method == request.method.toLowerCase();
         })[0];
-
         var responseDefinition = definition.responses[response.statusCode];
-        return responseDefinition && this.matchResponseHeaders(responseDefinition, response);
+
+        if (definition && (responseDefinition === null || responseDefinition)) {
+            return this.matchResponseHeaders(responseDefinition, response) && this.matchResponseBody(responseDefinition, response);
+        }
+        else {
+            console.log("no definition for " + request.method.toLowerCase() + " HTTP method with response status " + response.statusCode);
+        }
     };
 
     this.matchResponseHeaders = function(definition, response) {
-        return matchObject(definition.headers, response.headers);
+        if (!definition || matchObject(definition.headers, response.headers)) {
+            return true;
+        }
+        else {
+            console.log("response headers don't match");
+        }
     };
 
     this.matchResponseBody = function(definition, response) {
-        return definition.body['application/json'] && matchObject(definition.body['application/json'].schema, response.body);
+        if (!definition || definition.body['application/json'] && matchObject(definition.body['application/json'].schema, response.body)) {
+            return true;
+        }
+        else {
+            console.log("response body doesn't match");
+        }
     };
 }
 
@@ -216,7 +252,8 @@ function isUriPlaceholder(uriContract) {
 }
 
 function uriEquals(uriContract, uriChecked) {
-    return (isUriPlaceholder(uriContract) && uriChecked.indexOf('/', 1) < 0) || uriChecked.substring(0, uriChecked.indexOf('?')) == uriContract;
+    uriChecked = uriChecked.indexOf('?') >= 0 ? uriChecked.substring(0, uriChecked.indexOf('?')) : uriChecked;
+    return (isUriPlaceholder(uriContract) && uriChecked.indexOf('/', 1) < 0) || uriChecked == uriContract;
 }
 
 function findResourcebyRelativeUri(resources, uri) {
@@ -238,11 +275,8 @@ function getUriStrech(uri, begin, end) {
     return '/' + tokens.join('/');
 }
 
-function clone(obj) {
-    return JSON.parse(JSON.stringify(obj));
-}
-
 function matchObject(properties, object) {
+    properties = typeof properties == 'string' ? JSON.parse(properties) : properties;
     var schema = {
         type: 'object',
         $schema: 'http://json-schema.org/draft-03/schema',
