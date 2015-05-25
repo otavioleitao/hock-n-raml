@@ -22,8 +22,9 @@
     "q": "1.2.0",
     "raml-parser": "0.8.10",
     "express": "4.12.0",
-    "express-http-proxy": "0.3.1",
+    "express-http-proxy": "0.6.0",
     "hock": "1.2.0",
-    "array.prototype.find": "1.0.0"
+    "array.prototype.find": "1.0.0",
+    "jsonschema": "1.0.1"
   }
 }

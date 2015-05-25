@@ -7,6 +7,7 @@ var raml = require('raml-parser');
 var Q = require('q');
 var proxy = require('express-http-proxy');
 var express = require('express');
+var validate = require('jsonschema').validate;
 
 function RAMLServer(config) {
     var self = this;
@@ -58,21 +59,25 @@ function RAMLServer(config) {
         var app = express();
 
         if (self.config.proxy != null) {
-            app.use(proxy('localhost', {
-                intercept: function (body, request, response, callback) {
-                    self.validate(request, response, body);
+            var requestBody;
+            app.use(proxy(self.config.proxy.target, {
+                decorateRequest: function(request) {
+                    if (request.bodyContent.length > 0) {
+                        requestBody = JSON.parse(request.bodyContent.toString('utf8'));
+                    }
+
+                    return request;
+                },
+                intercept: function (originalRequest, body, request, response, callback) {
+
+                    response.body = body;
+                    request.body = requestBody;
+
+                    self.validate(request, response);
+
                     callback(null, body);
                 }
             }));
-        }
-
-        if (self.config.mock != null) {
-            var mock = hock.createHock({throwOnUnmatched: false});
-            mock.get('/bagagem/view/test.txt').any().reply(200, 'Mock!');
-            app.use(function (request, response, next) {
-                self.setupRequest(request, response);
-                mock.handler(request, response);
-            });
         }
 
         http.createServer(app).listen(self.config.server.port, function() {
@@ -81,61 +86,18 @@ function RAMLServer(config) {
         });
     };
 
-    var orig = http.ServerResponse.prototype.write;
-    var origEnd = http.ServerResponse.prototype.end;
-
-    this.setupRequest = function(request, response) {
-
-        function newWrite (chunk, encoding, callback) {
-            if (chunk) {
-                var data = chunk.toString('utf8');
-                if (!response.body) {
-                    response.body = data;
-                } else {
-                    response.body += data;
-                }
-            }
-            orig.call(this, chunk, encoding, callback);
-        }
-        response.write = newWrite;
-
-        function newEnd (chunk, encoding, callback) {
-            if (chunk) {
-                this.write(chunk, encoding);
-            }
-            this.validate(request, response, response.body);
-            origEnd.call(this);
-        }
-        response.end = newEnd;
-    };
-
-    this.validate = function(request, response, body) {
-        if (!this.isRequestValid(request)) {
+    this.validate = function(request, response) {
+        if (!this.isValid(request, response)) {
             console.log('-> invalid request\n\tURL =', request.url);
             console.log('\n*** shutting down server due to errors *** \n');
             process.exit();
         }
-
-        var validResponse = this.isResponseValid(response, body);
-        if (!validResponse) {
-            console.log('invalid response. \n\tURL =', request.url);
-        }
     };
 
-    this.isRequestValid = function(request) {
+    this.isValid = function(request, response) {
         var valid = false;
         this.contracts.forEach(function(contract) {
-            if (contract.isRequestValid(request)) {
-                valid = true;
-            }
-        });
-        return valid;
-    };
-
-    this.isResponseValid = function(response, body) {
-        var valid = false;
-        this.contracts.forEach(function(contract) {
-            if (contract.isResponseValid(response, body)) {
+            if (contract.isValid(request, response)) {
                 valid = true;
             }
         });
@@ -145,15 +107,11 @@ function RAMLServer(config) {
 
 function Contract(data) {
 
-    this.isRequestValid = function(request) {
+    this.isValid = function(request, response) {
         var definition = this.getDefinition(request.url);
         if (definition) {
-            return definition.matches(request);
+            return definition.matchesRequest(request) && definition.matchesResponse(request, response);
         }
-    };
-
-    this.isResponseValid = function(response, body) {
-        return true;
     };
 
     this.getDefinition = function(url) {
@@ -177,6 +135,12 @@ function Contract(data) {
 }
 
 function Resource(data) {
+    var defaultSchema =           {
+        type: 'object',
+        $schema: 'http://json-schema.org/draft-03/schema',
+        id: 'http://jsonschema.net',
+        required: true
+    };
 
     this.getResource = function(uri) {
         if (uriEquals(data.relativeUri, uri)) {
@@ -206,10 +170,59 @@ function Resource(data) {
         }
     };
 
-    this.matches = function(request) {
-        // var matchHeaders = this.matchHeaders(request.headers);
-        return true;
-    }
+    this.matchesRequest = function(request) {
+        return this.matchRequestParams(request) && this.matchRequestHeaders(request);
+    };
+
+    this.matchRequestParams = function(request) {
+        if (request.method.toLowerCase() === 'get') {
+            return this.matchQueryParams(request);
+        }
+        else {
+            return this.matchRequestBody(request);
+        }
+    };
+
+    this.matchRequestBody = function(request) {
+        var definition = data.methods.filter(function(def) {
+            return def.method == request.method.toLowerCase();
+        })[0];
+
+        if (definition) {
+            var schema = JSON.parse(definition.body['application/json'].schema);
+            return validate(request.body, schema).errors.length === 0;
+        }
+    };
+
+    this.matchQueryParams = function(request) {
+        var definition = data.methods.filter(function(def) {
+            return def.method == request.method.toLowerCase();
+        })[0];
+
+        var schema = clone(defaultSchema);
+        schema.properties = definition.queryParameters;
+
+        return !definition.queryParameters || validate(request.query, schema).errors.length === 0;
+    };
+
+    this.matchRequestHeaders = function(request) {
+        var definition = data.methods.filter(function(def) {
+            return def.method == request.method.toLowerCase();
+        })[0];
+
+        var schema = clone(defaultSchema);
+        schema.properties = definition.headers;
+
+        return validate(request.headers, schema).errors.length === 0;
+    };
+
+    this.matchesResponse = function(request, response) {
+        var definition = data.methods.filter(function(def) {
+            return def.method == request.method.toLowerCase();
+        })[0];
+
+        return definition.responses[response.statusCode];
+    };
 }
 
 function uriMatch(uriContract, uriChecked) {
@@ -221,7 +234,7 @@ function isUriPlaceholder(uriContract) {
 }
 
 function uriEquals(uriContract, uriChecked) {
-    return (isUriPlaceholder(uriContract) && uriChecked.indexOf('/', 1) < 0) || uriChecked == uriContract;
+    return (isUriPlaceholder(uriContract) && uriChecked.indexOf('/', 1) < 0) || uriChecked.substring(0, uriChecked.indexOf('?')) == uriContract;
 }
 
 function findResourcebyRelativeUri(resources, uri) {
@@ -241,6 +254,10 @@ function getUriPart(uri, begin) {
 function getUriStrech(uri, begin, end) {
     var tokens = uri.split('/').slice(begin, end);
     return '/' + tokens.join('/');
+}
+
+function clone(obj) {
+    return JSON.parse(JSON.stringify(obj));
 }
 
 var config = process.argv[2];

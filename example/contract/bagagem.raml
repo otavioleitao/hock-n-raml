@@ -1,0 +1,44 @@
+#%RAML 0.8
+
+title: Bagagem RAML Contract
+baseUri: http://{domain}:8081/bagagem
+/login:
+  get:
+    queryParameters:
+      otavio:
+        type: string
+        required: true
+      teste:
+        type: string
+        required: true
+    headers:
+      authorization:
+        type: string
+        required: true
+    body:
+      application/json:
+        schema: |
+          {
+            "type": "object",
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "id": "http://jsonschema.net",
+            "required": true,
+            "properties": {
+              "username": {
+                "type": "string",
+                "required": true
+              },
+              "password": {
+                "type": "string",
+                "required": true
+              }
+            }
+          }
+        example: |
+          {
+            "username": "otavio",
+            "password": "123456"
+          }
+    responses:
+      200:
+      401:

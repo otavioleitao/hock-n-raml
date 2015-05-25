@@ -3,10 +3,9 @@
     "port": 8080
   },
   "proxy": {
-    "target": "http://localhost:80/"
+    "target": "localhost:8081"
   },
   "contracts": [
-    "example/contract/person-contract.raml",
-    "example/contract/auth-contract.raml"
+    "example/contract/bagagem.raml"
   ]
 }
