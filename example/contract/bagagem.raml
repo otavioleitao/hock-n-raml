@@ -17,23 +17,13 @@ baseUri: http://{domain}:8081/bagagem
         required: true
     body:
       application/json:
-        schema: |
-          {
-            "type": "object",
-            "$schema": "http://json-schema.org/draft-03/schema",
-            "id": "http://jsonschema.net",
-            "required": true,
-            "properties": {
-              "username": {
-                "type": "string",
-                "required": true
-              },
-              "password": {
-                "type": "string",
-                "required": true
-              }
-            }
-          }
+        schema:
+          username:
+            type: string
+            required: true
+          password:
+            type: string
+            required: true
         example: |
           {
             "username": "otavio",
@@ -41,4 +31,22 @@ baseUri: http://{domain}:8081/bagagem
           }
     responses:
       200:
+        headers:
+          authorization:
+            type: string
+            required: true
+        body:
+          application/json:
+            schema:
+              username:
+                type: string
+                required: true
+              password:
+                type: string
+                required: true
+            example: |
+              {
+                "username": "otavio",
+                "password": "123456"
+              }
       401:

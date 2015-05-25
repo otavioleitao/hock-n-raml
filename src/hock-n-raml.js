@@ -135,13 +135,6 @@ function Contract(data) {
 }
 
 function Resource(data) {
-    var defaultSchema =           {
-        type: 'object',
-        $schema: 'http://json-schema.org/draft-03/schema',
-        id: 'http://jsonschema.net',
-        required: true
-    };
-
     this.getResource = function(uri) {
         if (uriEquals(data.relativeUri, uri)) {
             return this;
@@ -171,49 +164,29 @@ function Resource(data) {
     };
 
     this.matchesRequest = function(request) {
-        return this.matchRequestParams(request) && this.matchRequestHeaders(request);
-    };
-
-    this.matchRequestParams = function(request) {
-        if (request.method.toLowerCase() === 'get') {
-            return this.matchQueryParams(request);
-        }
-        else {
-            return this.matchRequestBody(request);
-        }
-    };
-
-    this.matchRequestBody = function(request) {
-        var definition = data.methods.filter(function(def) {
+        var requestDefinition = data.methods.filter(function(def) {
             return def.method == request.method.toLowerCase();
         })[0];
 
-        if (definition) {
-            var schema = JSON.parse(definition.body['application/json'].schema);
-            return validate(request.body, schema).errors.length === 0;
+        if (requestDefinition) {
+            return this.matchRequestParams(requestDefinition, request) && this.matchRequestHeaders(requestDefinition, request);
         }
     };
 
-    this.matchQueryParams = function(request) {
-        var definition = data.methods.filter(function(def) {
-            return def.method == request.method.toLowerCase();
-        })[0];
-
-        var schema = clone(defaultSchema);
-        schema.properties = definition.queryParameters;
-
-        return !definition.queryParameters || validate(request.query, schema).errors.length === 0;
+    this.matchRequestParams = function(definition, request) {
+        return request.method.toLowerCase() === 'get' ? this.matchQueryParams(definition, request) : this.matchRequestBody(definition, request);
     };
 
-    this.matchRequestHeaders = function(request) {
-        var definition = data.methods.filter(function(def) {
-            return def.method == request.method.toLowerCase();
-        })[0];
+    this.matchRequestBody = function(definition, request) {
+        return definition.body['application/json'] && matchObject(definition.body['application/json'].schema, request.body);
+    };
 
-        var schema = clone(defaultSchema);
-        schema.properties = definition.headers;
+    this.matchQueryParams = function(definition, request) {
+        return matchObject(definition.queryParameters, request.query);
+    };
 
-        return validate(request.headers, schema).errors.length === 0;
+    this.matchRequestHeaders = function(definition, request) {
+        return matchObject(definition.headers, request.headers);
     };
 
     this.matchesResponse = function(request, response) {
@@ -221,7 +194,16 @@ function Resource(data) {
             return def.method == request.method.toLowerCase();
         })[0];
 
-        return definition.responses[response.statusCode];
+        var responseDefinition = definition.responses[response.statusCode];
+        return responseDefinition && this.matchResponseHeaders(responseDefinition, response);
+    };
+
+    this.matchResponseHeaders = function(definition, response) {
+        return matchObject(definition.headers, response.headers);
+    };
+
+    this.matchResponseBody = function(definition, response) {
+        return definition.body['application/json'] && matchObject(definition.body['application/json'].schema, response.body);
     };
 }
 
@@ -258,6 +240,18 @@ function getUriStrech(uri, begin, end) {
 
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
+}
+
+function matchObject(properties, object) {
+    var schema = {
+        type: 'object',
+        $schema: 'http://json-schema.org/draft-03/schema',
+        id: 'http://jsonschema.net',
+        required: true,
+        properties: properties
+    };
+
+    return !properties || validate(object, schema).errors.length === 0;
 }
 
 var config = process.argv[2];
