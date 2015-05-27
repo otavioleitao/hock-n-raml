@@ -6,6 +6,6 @@
     "target": "localhost:8081"
   },
   "contracts": [
-    "example/contract/bagagem.raml"
+    "example/contract/bagagem/bagagem.raml"
   ]
 }

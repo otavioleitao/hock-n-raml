@@ -1,0 +1,127 @@
+#%RAML 0.8
+title: Bagagem RAML Contract
+baseUri: http://{domain}:8081/bagagem
+schemas:
+  - identity: !include schema/identity.json
+traits:
+  - secured:
+      headers:
+        authorization:
+          type: string
+          required: true
+/login:
+  post:
+    body:
+      application/json:
+        schema: |
+          {
+              "username": {
+                "type": "string",
+                "required": false
+              },
+              "password": {
+                "type": "string",
+                "required": false
+              },
+              "token": {
+                "type": "string",
+                "required": false
+              }
+          }
+        example: |
+          {
+            "username": "otavio",
+            "password": "123456"
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            schema: |
+              identity
+            example: |
+              {
+                "person": {
+                    "id" : 1,
+                    "firstName": "Silvester",
+                    "lastName": "Uzoma",
+                    "email": "silvester.uzoma@mailinator.com",
+                    "thumbnail": "http://userserve-ak.last.fm/serve/64s/45684603.jpg"
+                },
+                "user: {
+                    "id: 2,
+                    "username: "silvester.uzoma@mailinator.com",
+                    "orgId: 3,
+                    "personId: 1
+                }
+              }
+        headers:
+          authorization:
+            type: string
+            required: true
+      401:
+/people:
+  /{personId}:
+    /details:
+      is: [secured]
+      get:
+        responses:
+          200:
+            body:
+              application/json:
+                schema: |
+                  {
+                      "id": {
+                        "type": "integer",
+                        "required": true
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "required": true
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "required": true
+                      },
+                      "thumbnail": {
+                        "type": "string",
+                        "required": true
+                      },
+                      "photo": {
+                        "type": "string",
+                        "required": true
+                      },
+                      "rank": {
+                        "type": "integer",
+                        "required": true
+                      },
+                      "points": {
+                        "type": "integer",
+                        "required": true
+                      },
+                      "badgeCount": {
+                        "type": "integer",
+                        "required": true
+                      },
+                      "completedLessonCount": {
+                        "type": "integer",
+                        "required": true
+                      },
+                      "lessonCount": {
+                        "type": "integer",
+                        "required": true
+                      }
+                  }
+                example: |
+                  {
+                    id: 1,
+                    firstName: "Silvester",
+                    lastName: "Uzoma",
+                    thumbnail: "http://userserve-ak.last.fm/serve/64s/45684603.jpg",
+                    photo: "http://img3.wikia.nocookie.net/__cb20130216121424/adventuretimewithfinnandjake/images/2/29/Tom-cruise-funny-face.png",
+                    rank: 1,
+                    points: 75000,
+                    badgeCount: 7,
+                    completedLessonCount: 21,
+                    lessonCount: 37
+                  }

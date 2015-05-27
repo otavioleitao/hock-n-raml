@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-03/schema",
+  "id": "http://jsonschema.net",
+  "required": true,
+  "definitions": {
+    "personIdentity": {
+      "id": { "required": true, "type": "integer" },
+      "firstName": { "required": true, "type": "string" },
+      "lastName": { "required": true, "type": "string" },
+      "email": { "required": true, "type": "string" },
+      "thumbnail": { "required": true, "type": "string" }
+    },
+    "userIdentity": {
+      "id": { "required": true, "type": "integer" },
+      "username": { "required": true, "type": "string" },
+      "orgId": { "required": true, "type": "integer" },
+      "personId": { "required": true, "type": "integer" }
+    }
+  },
+  "properties": {
+    "person": { "$ref": "#/definitions/personIdentity" },
+    "person": { "$ref": "#/definitions/userIdentity" }
+  }
+}

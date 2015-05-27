@@ -59,19 +59,24 @@ function RAMLServer(config) {
         var app = express();
 
         if (self.config.proxy != null) {
-            var requestBody;
+            var requestBody = [];
             app.use(proxy(self.config.proxy.target, {
                 decorateRequest: function(request) {
                     if (request.bodyContent.length > 0) {
-                        requestBody = JSON.parse(request.bodyContent.toString('utf8'));
+                        requestBody[request.path] = JSON.parse(request.bodyContent.toString('utf8'));
                     }
 
                     return request;
                 },
                 intercept: function (originalRequest, body, request, response, callback) {
+                    try {
+                        response.body = JSON.parse(body.toString('utf-8'));
+                    }
+                    catch(err) {
 
-                    response.body = body;
-                    request.body = requestBody;
+                    }
+
+                    request.body = requestBody[request.url];
 
                     self.validate(request, response);
 
@@ -88,7 +93,6 @@ function RAMLServer(config) {
 
     this.validate = function(request, response) {
         if (!this.isValid(request, response)) {
-            console.log('-> invalid request\n\tURL =', request.url);
             console.log('\n*** shutting down server due to errors *** \n');
             process.exit();
         }
@@ -133,11 +137,11 @@ function Contract(data) {
     };
 
     this.getRootResource = function(uri) {
-        return findResourcebyRelativeUri(data.resources, uri);
+        return findResourcebyRelativeUri(data, uri);
     };
 }
 
-function Resource(data) {
+function Resource(contract, data) {
     this.getResource = function(uri) {
         if (uriEquals(data.relativeUri, uri)) {
             return this;
@@ -162,7 +166,7 @@ function Resource(data) {
 
     this.getResourceByRelativeUri = function(uri) {
         if (data.resources) {
-            return findResourcebyRelativeUri(data.resources, uri);
+            return findResourcebyRelativeUri(data, uri);
         }
     };
 
@@ -184,7 +188,7 @@ function Resource(data) {
     };
 
     this.matchRequestBody = function(definition, request) {
-        if (definition.body['application/json'] && matchObject(definition.body['application/json'].schema, request.body)) {
+        if (!definition.body || (definition.body['application/json'] && this.matchObject(definition.body['application/json'].schema, request.body))) {
             return true;
         }
         else {
@@ -193,7 +197,7 @@ function Resource(data) {
     };
 
     this.matchQueryParams = function(definition, request) {
-        if (matchObject(definition.queryParameters, request.query)) {
+        if (this.matchObject(definition.queryParameters, request.query)) {
             return true;
         }
         else {
@@ -202,7 +206,7 @@ function Resource(data) {
     };
 
     this.matchRequestHeaders = function(definition, request) {
-        if (matchObject(definition.headers, request.headers)) {
+        if (this.matchObject(definition.headers, request.headers)) {
             return true;
         }
         else {
@@ -225,7 +229,7 @@ function Resource(data) {
     };
 
     this.matchResponseHeaders = function(definition, response) {
-        if (!definition || matchObject(definition.headers, response.headers)) {
+        if (!definition || this.matchObject(definition.headers, response._headers)) {
             return true;
         }
         else {
@@ -234,11 +238,51 @@ function Resource(data) {
     };
 
     this.matchResponseBody = function(definition, response) {
-        if (!definition || definition.body['application/json'] && matchObject(definition.body['application/json'].schema, response.body)) {
+        if (!definition || (definition.body['application/json'] && this.matchObject(definition.body['application/json'].schema, response.body))) {
             return true;
         }
         else {
             console.log("response body doesn't match");
+        }
+    };
+
+    this.matchObject = function(properties, object) {
+        var schema = {
+            type: 'object',
+            $schema: 'http://json-schema.org/draft-03/schema',
+            id: 'http://jsonschema.net',
+            required: true
+        };
+
+        try {
+            var schemaProperties = properties;
+            if (typeof properties === 'string') {
+                schemaProperties = JSON.parse(properties);
+            }
+            schema.properties = schemaProperties;
+        }
+        catch (err) {
+            var schemaName = properties.replace('\n', '');
+            var file = contract.schemas.filter(function(s) {
+                return typeof s[schemaName] === 'string';
+            })[0];
+            schema = JSON.parse(file[schemaName]);
+        }
+
+
+        if (properties) {
+            var result = validate(object, schema);
+            var match = result.errors.length === 0;
+            if (!match) {
+                console.log("schema doesn't match");
+                for(var i = 0; i < result.errors.length; i++) {
+                    console.log(result.errors[i].stack);
+                }
+            }
+            return match;
+        }
+        else {
+            return true;
         }
     };
 }
@@ -256,13 +300,13 @@ function uriEquals(uriContract, uriChecked) {
     return (isUriPlaceholder(uriContract) && uriChecked.indexOf('/', 1) < 0) || uriChecked == uriContract;
 }
 
-function findResourcebyRelativeUri(resources, uri) {
-    var resource = resources.find(function(element) {
+function findResourcebyRelativeUri(contract, uri) {
+    var resource = contract.resources.find(function(element) {
         return uriMatch(element.relativeUri, uri);
     });
 
     if (resource) {
-        return new Resource(resource);
+        return new Resource(contract, resource);
     }
 }
 
@@ -273,19 +317,6 @@ function getUriPart(uri, begin) {
 function getUriStrech(uri, begin, end) {
     var tokens = uri.split('/').slice(begin, end);
     return '/' + tokens.join('/');
-}
-
-function matchObject(properties, object) {
-    properties = typeof properties == 'string' ? JSON.parse(properties) : properties;
-    var schema = {
-        type: 'object',
-        $schema: 'http://json-schema.org/draft-03/schema',
-        id: 'http://jsonschema.net',
-        required: true,
-        properties: properties
-    };
-
-    return !properties || validate(object, schema).errors.length === 0;
 }
 
 var config = process.argv[2];
