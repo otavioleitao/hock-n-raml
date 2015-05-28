@@ -2,7 +2,8 @@
 title: Bagagem RAML Contract
 baseUri: http://{domain}:8081/bagagem
 schemas:
-  - identity: !include schema/identity.json
+  - user-identity: !include schema/identity.json
+    lesson-result-student-view: !include schema/lesson-result-student-view.json
 traits:
   - secured:
       headers:
@@ -28,33 +29,12 @@ traits:
                 "required": false
               }
           }
-        example: |
-          {
-            "username": "otavio",
-            "password": "123456"
-          }
     responses:
       200:
         body:
           application/json:
-            schema: |
-              identity
-            example: |
-              {
-                "person": {
-                    "id" : 1,
-                    "firstName": "Silvester",
-                    "lastName": "Uzoma",
-                    "email": "silvester.uzoma@mailinator.com",
-                    "thumbnail": "http://userserve-ak.last.fm/serve/64s/45684603.jpg"
-                },
-                "user: {
-                    "id: 2,
-                    "username: "silvester.uzoma@mailinator.com",
-                    "orgId: 3,
-                    "personId: 1
-                }
-              }
+            schema:
+              user-identity
         headers:
           authorization:
             type: string
@@ -112,16 +92,15 @@ traits:
                         "required": true
                       }
                   }
-                example: |
-                  {
-                    id: 1,
-                    firstName: "Silvester",
-                    lastName: "Uzoma",
-                    thumbnail: "http://userserve-ak.last.fm/serve/64s/45684603.jpg",
-                    photo: "http://img3.wikia.nocookie.net/__cb20130216121424/adventuretimewithfinnandjake/images/2/29/Tom-cruise-funny-face.png",
-                    rank: 1,
-                    points: 75000,
-                    badgeCount: 7,
-                    completedLessonCount: 21,
-                    lessonCount: 37
-                  }
+/students:
+  /{studentId}:
+    /lessons:
+      /{lessonId}:
+        is: [secured]
+        get:
+          responses:
+            200:
+              body:
+                application/json:
+                  schema:
+                    lesson-result-student-view

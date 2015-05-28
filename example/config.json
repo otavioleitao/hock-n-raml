@@ -1,6 +1,7 @@
 {
   "server": {
-    "port": 8080
+    "port": 8080,
+    "exitOnError": false
   },
   "proxy": {
     "target": "localhost:8081"
