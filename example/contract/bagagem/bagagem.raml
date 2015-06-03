@@ -1,6 +1,6 @@
 #%RAML 0.8
 title: Bagagem RAML Contract
-baseUri: http://{domain}:8081/bagagem
+baseUri: http://{domain}:8081/rest/bagagem
 schemas:
   - user-identity: !include schema/identity.json
     lesson-result-student-view: !include schema/lesson-result-student-view.json
@@ -16,6 +16,9 @@ traits:
       application/json:
         schema: |
           {
+            "type": "object",
+            "required": true,
+            "properties": {
               "username": {
                 "type": "string",
                 "required": false
@@ -28,6 +31,7 @@ traits:
                 "type": "string",
                 "required": false
               }
+            }
           }
     responses:
       200:
@@ -51,6 +55,9 @@ traits:
               application/json:
                 schema: |
                   {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
                       "id": {
                         "type": "integer",
                         "required": true
@@ -91,6 +98,7 @@ traits:
                         "type": "integer",
                         "required": true
                       }
+                    }
                   }
 /students:
   /{studentId}:

@@ -7,7 +7,7 @@ var raml = require('raml-parser');
 var Q = require('q');
 var proxy = require('express-http-proxy');
 var express = require('express');
-var validate = require('jsonschema').validate;
+var tv4 = require('tv4');
 
 function RAMLServer(config) {
     var self = this;
@@ -78,7 +78,9 @@ function RAMLServer(config) {
 
                     request.body = requestBody[request.url];
 
-                    self.validate(request, response);
+                    if (!self.validate(request, response)) {
+                        body = '### ERROR: INVALID REQUEST ###';
+                    }
 
                     callback(null, body);
                 }
@@ -93,12 +95,17 @@ function RAMLServer(config) {
 
     this.validate = function(request, response) {
         if (!this.isValid(request, response)) {
-            console.log('\n*** invalid request received *** \n');
+            console.log('\n*** invalid request received: ' + request.url +  '  *** \n');
             if (self.config.server.exitOnError) {
                 console.log('\n*** shutting down server due to errors *** \n');
                 process.exit();
             }
+            response.statusCode = 9999;
+
+            return false;
         }
+
+        return true;
     };
 
     this.isValid = function(request, response) {
@@ -108,6 +115,7 @@ function RAMLServer(config) {
                 valid = true;
             }
         });
+
         return valid;
     };
 }
@@ -118,9 +126,6 @@ function Contract(data) {
         var definition = this.getDefinition(request.url);
         if (definition) {
             return definition.matchesRequest(request) && definition.matchesResponse(request, response);
-        }
-        else {
-            console.log("no definition for " + request.url);
         }
     };
 
@@ -263,16 +268,18 @@ function Resource(contract, data) {
         }
 
         if (schema) {
-            var result = validate(object, schema);
-            var match = result.errors.length === 0;
-            if (!match) {
-                console.log(schema);
-                console.log(object);
-                for(var i = 0; i < result.errors.length; i++) {
-                    console.log(result.errors[i].stack);
+            var result = tv4.validateMultiple(object, schema);
+            if (result.errors) {
+                for (var i = 0; i < result.errors.length; i++) {
+                    console.log('error #' + i);
+                    console.log(result.errors[i].message);
+                    console.log(result.errors[i].dataPath);
+                    console.log(result.errors[i].schemaPath);
+                    console.log('');
                 }
             }
-            return match;
+
+            return result.valid;
         }
         else {
             return true;

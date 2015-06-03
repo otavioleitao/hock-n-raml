@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "required": true,
+  "definitions": {
+    "practicalActivityLesson": {
+      "type": "object",
+      "properties": {
+        "id": { "required": true, "type": "integer" },
+        "name": { "required": true, "type": "string" },
+        "description": { "required": true, "type": "string" },
+        "files": {
+          "required": true,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "required": true, "type": "integer" },
+              "name": { "required": true, "type": "string" },
+              "url": { "required": true, "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "practicalActivityLessonEnrollment": {
+      "type": "object",
+      "properties": {
+        "id": { "required": true, "type": "integer" },
+        "authorId": { "required": true, "type": "integer" },
+        "authorFirstName": { "required": true, "type": "string" },
+        "authorLastName": { "required": true, "type": "string" },
+        "creationDate": { "required": true, "type": "integer" },
+        "rating": { "required": true, "type": "integer" },
+        "message": { "required": true, "type": "integer" }
+      }
+    }
+  },
+  "properties": {
+    "course": { "$ref": "#/definitions/practicalActivityLesson" },
+    "courseEnrollment": { "$ref": "#/definitions/practicalActivityLessonEnrollment" }
+  }
+}

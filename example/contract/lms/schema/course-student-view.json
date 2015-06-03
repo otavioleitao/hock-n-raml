@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "required": true,
+  "definitions": {
+    "course": {
+      "type": "object",
+      "properties": {
+        "id": { "required": true, "type": "integer" },
+        "name": { "required": true, "type": "string" },
+        "description": { "required": true, "type": "string" },
+        "maxPoints": { "required": true, "type": "integer" },
+        "workload": { "required": true, "type": "integer" }
+      }
+    },
+    "courseEnrollment": {
+      "type": "object",
+      "properties": {
+        "id": { "required": true, "type": "integer" },
+        "courseId": { "required": true, "type": "integer" },
+        "personId": { "required": true, "type": "integer" },
+        "status": { "required": true, "type": "string", "enum": [ "BLOCKED", "NOT_STARTED", "INCOMPLETE", "COMPLETED", "FAILED", "PASSED" ] }
+      }
+    }
+  },
+  "properties": {
+    "course": { "$ref": "#/definitions/course" },
+    "courseEnrollment": { "$ref": "#/definitions/courseEnrollment" }
+  }
+}

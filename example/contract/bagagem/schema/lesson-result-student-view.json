@@ -15,7 +15,7 @@
             "properties": {
               "criteriaId": { "required": true, "type": "string" },
               "criteriaTitle": { "required": true, "type": "string" },
-              "rating": { "required": true, "type": [ "integer", null ] }
+              "rating": { "required": true, "type": [ "integer", "null" ] }
             }
           }
         }
@@ -33,7 +33,7 @@
       "type": "object",
       "properties": {
         "lessonFinished": { "required": true, "type": "boolean" },
-        "likes": { "required": false, "type": [ "boolean", null ] },
+        "likes": { "required": false, "type": [ "boolean", "null" ] },
         "socialContent": { "$ref": "#/definitions/socialContent" }
       }
     }
